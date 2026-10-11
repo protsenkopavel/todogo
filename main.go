@@ -5,17 +5,20 @@ import (
 	"net/http"
 )
 
+func newRouter(h *TodoHandler) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /todos", h.GetAll)
+	mux.HandleFunc("POST /todos", h.Create)
+	mux.HandleFunc("GET /todos/{id}", h.GetByID)
+	mux.HandleFunc("PUT /todos/{id}", h.Update)
+	mux.HandleFunc("DELETE /todos/{id}", h.Delete)
+	return mux
+}
+
 func main() {
 	store := NewStore()
 	handler := NewTodoHandler(store)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /todos", handler.GetAll)
-	mux.HandleFunc("POST /todos", handler.Create)
-	mux.HandleFunc("GET /todos/{id}", handler.GetByID)
-	mux.HandleFunc("PUT /todos/{id}", handler.Update)
-	mux.HandleFunc("DELETE /todos/{id}", handler.Delete)
-
 	log.Println("server started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Fatal(http.ListenAndServe(":8080", newRouter(handler)))
 }
