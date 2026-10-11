@@ -6,3 +6,21 @@ Content-Type: application/json
 
 ### Список
 GET localhost:8080/todos
+
+### Получить по ID
+GET localhost:8080/todos/1
+
+### Обновить
+PUT localhost:8080/todos/1
+Content-Type: application/json
+
+{"title": "купить молоко", "done": true}
+
+### Удалить
+DELETE localhost:8080/todos/1
+
+### Несуществующая
+GET localhost:8080/todos/999
+
+### Кривой ID
+GET localhost:8080/todos/abc

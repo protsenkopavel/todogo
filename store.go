@@ -47,3 +47,16 @@ func (s *Store) Delete(id int) bool {
 	delete(s.todos, id)
 	return true
 }
+
+func (s *Store) Update(id int, title string, done bool) (Todo, bool) {
+	todo, ok := s.todos[id]
+	if !ok {
+		return Todo{}, false
+	}
+
+	todo.Title = title
+	todo.Done = done
+	s.todos[id] = todo
+
+	return todo, true
+}
