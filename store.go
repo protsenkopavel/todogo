@@ -1,8 +1,12 @@
 package main
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 type Store struct {
+	mu     sync.RWMutex
 	todos  map[int]Todo
 	nextID int
 }
@@ -15,6 +19,8 @@ func NewStore() *Store {
 }
 
 func (s *Store) Create(title string) Todo {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	todo := Todo{
 		ID:        s.nextID,
 		Title:     title,
@@ -27,11 +33,15 @@ func (s *Store) Create(title string) Todo {
 }
 
 func (s *Store) Get(id int) (Todo, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	todo, ok := s.todos[id]
 	return todo, ok
 }
 
 func (s *Store) GetAll() []Todo {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	result := []Todo{}
 	for _, todo := range s.todos {
 		result = append(result, todo)
@@ -40,6 +50,8 @@ func (s *Store) GetAll() []Todo {
 }
 
 func (s *Store) Delete(id int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	_, ok := s.todos[id]
 	if !ok {
 		return false
@@ -49,6 +61,8 @@ func (s *Store) Delete(id int) bool {
 }
 
 func (s *Store) Update(id int, title string, done bool) (Todo, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	todo, ok := s.todos[id]
 	if !ok {
 		return Todo{}, false
