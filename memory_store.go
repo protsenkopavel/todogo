@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -8,20 +9,22 @@ import (
 	"unicode/utf8"
 )
 
-type Store struct {
+type MemoryStore struct {
 	mu     sync.RWMutex
 	todos  map[int]Todo
 	nextID int
 }
 
-func NewStore() *Store {
-	return &Store{
+var _ TodoStore = (*MemoryStore)(nil)
+
+func NewMemoryStore() *MemoryStore {
+	return &MemoryStore{
 		todos:  make(map[int]Todo),
 		nextID: 1,
 	}
 }
 
-func (s *Store) Create(title string) (Todo, error) {
+func (s *MemoryStore) Create(ctx context.Context, title string) (Todo, error) {
 	title, err := validateTitle(title)
 	if err != nil {
 		return Todo{}, err
@@ -41,7 +44,7 @@ func (s *Store) Create(title string) (Todo, error) {
 	return todo, nil
 }
 
-func (s *Store) Get(id int) (Todo, error) {
+func (s *MemoryStore) Get(ctx context.Context, id int) (Todo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -52,17 +55,17 @@ func (s *Store) Get(id int) (Todo, error) {
 	return todo, nil
 }
 
-func (s *Store) GetAll() []Todo {
+func (s *MemoryStore) GetAll(ctx context.Context) ([]Todo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	result := []Todo{}
 	for _, todo := range s.todos {
 		result = append(result, todo)
 	}
-	return result
+	return result, nil
 }
 
-func (s *Store) Delete(id int) error {
+func (s *MemoryStore) Delete(ctx context.Context, id int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	_, ok := s.todos[id]
@@ -73,7 +76,7 @@ func (s *Store) Delete(id int) error {
 	return nil
 }
 
-func (s *Store) Update(id int, title string, done bool) (Todo, error) {
+func (s *MemoryStore) Update(ctx context.Context, id int, title string, done bool) (Todo, error) {
 	title, err := validateTitle(title)
 	if err != nil {
 		return Todo{}, err

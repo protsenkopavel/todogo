@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"sync"
@@ -8,9 +9,10 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	store := NewStore()
+	ctx := context.Background()
+	store := NewMemoryStore()
 
-	todo, err := store.Create("купить молоко")
+	todo, err := store.Create(ctx, "купить молоко")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -26,9 +28,10 @@ func TestCreate(t *testing.T) {
 }
 
 func TestGet_NotFound(t *testing.T) {
-	store := NewStore()
+	ctx := context.Background()
+	store := NewMemoryStore()
 
-	_, err := store.Get(999)
+	_, err := store.Get(ctx, 999)
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("err = %v, want ErrNotFound", err)
 	}
@@ -64,19 +67,24 @@ func TestValidateTitle(t *testing.T) {
 }
 
 func TestCreate_Concurrent(t *testing.T) {
-	store := NewStore()
+	ctx := context.Background()
+	store := NewMemoryStore()
 	var wg sync.WaitGroup
 
 	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			store.Create("task")
+			store.Create(ctx, "task")
 		}()
 	}
 	wg.Wait()
 
-	if got := len(store.GetAll()); got != 1000 {
-		t.Errorf("created %d todos, want 1000", got)
+	todos, err := store.GetAll(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(todos) != 1000 {
+		t.Errorf("created %d todos, want 1000", len(todos))
 	}
 }

@@ -1,17 +1,27 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 )
 
-type TodoHandler struct {
-	store *Store
+type TodoStore interface {
+	Create(ctx context.Context, title string) (Todo, error)
+	Get(ctx context.Context, id int) (Todo, error)
+	GetAll(ctx context.Context) ([]Todo, error)
+	Update(ctx context.Context, id int, title string, done bool) (Todo, error)
+	Delete(ctx context.Context, id int) error
 }
 
-func NewTodoHandler(store *Store) *TodoHandler {
+type TodoHandler struct {
+	store TodoStore
+}
+
+func NewTodoHandler(store TodoStore) *TodoHandler {
 	return &TodoHandler{store: store}
 }
 
@@ -25,7 +35,11 @@ type updateTodoRequest struct {
 }
 
 func (h *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	todos := h.store.GetAll()
+	todos, err := h.store.GetAll(r.Context())
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, todos)
 }
 
@@ -36,7 +50,7 @@ func (h *TodoHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := h.store.Get(id)
+	todo, err := h.store.Get(r.Context(), id)
 	if err != nil {
 		writeStoreError(w, err)
 		return
@@ -52,7 +66,7 @@ func (h *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := h.store.Create(req.Title)
+	todo, err := h.store.Create(r.Context(), req.Title)
 	if err != nil {
 		writeStoreError(w, err)
 		return
@@ -74,7 +88,7 @@ func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := h.store.Update(id, req.Title, req.Done)
+	todo, err := h.store.Update(r.Context(), id, req.Title, req.Done)
 	if err != nil {
 		writeStoreError(w, err)
 		return
@@ -90,7 +104,7 @@ func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.store.Delete(id); err != nil {
+	if err := h.store.Delete(r.Context(), id); err != nil {
 		writeStoreError(w, err)
 		return
 	}
@@ -119,6 +133,7 @@ func writeStoreError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrEmptyTitle), errors.Is(err, ErrTitleTooLong):
 		writeError(w, http.StatusBadRequest, err.Error())
 	default:
+		log.Printf("internal error: %v", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 	}
 }

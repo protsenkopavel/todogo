@@ -9,7 +9,7 @@ import (
 )
 
 func newTestRouter() http.Handler {
-	return newRouter(NewTodoHandler(NewStore()))
+	return newRouter(NewTodoHandler(NewMemoryStore()))
 }
 
 func TestCreateAndGet(t *testing.T) {
