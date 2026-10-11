@@ -24,3 +24,24 @@ GET localhost:8080/todos/999
 
 ### Кривой ID
 GET localhost:8080/todos/abc
+
+### Пустое название
+POST localhost:8080/todos
+Content-Type: application/json
+
+{"title": ""}
+
+### Одни пробелы
+POST localhost:8080/todos
+Content-Type: application/json
+
+{"title": "     "}
+
+### Нет поля title вообще
+POST localhost:8080/todos
+Content-Type: application/json
+
+{}
+
+### Несуществующая задача
+DELETE localhost:8080/todos/999

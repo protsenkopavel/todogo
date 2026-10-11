@@ -1,0 +1,9 @@
+package main
+
+import "errors"
+
+var (
+	ErrNotFound     = errors.New("todo not found")
+	ErrEmptyTitle   = errors.New("title is required")
+	ErrTitleTooLong = errors.New("title is too long")
+)
