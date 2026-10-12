@@ -1,4 +1,4 @@
-package main
+package httpapi
 
 import (
 	"encoding/json"
@@ -6,10 +6,15 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"todogo/internal/storage/memory"
+	"todogo/internal/todo"
 )
 
+var _ TodoStore = (*memory.Store)(nil)
+
 func newTestRouter() http.Handler {
-	return newRouter(NewTodoHandler(NewMemoryStore()))
+	return NewRouter(NewHandler(memory.New()))
 }
 
 func TestCreateAndGet(t *testing.T) {
@@ -18,14 +23,13 @@ func TestCreateAndGet(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/todos",
 		strings.NewReader(`{"title":"купить молоко"}`))
 	rec := httptest.NewRecorder()
-
 	router.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("status = %d, want 201, body: %s", rec.Code, rec.Body.String())
 	}
 
-	var created Todo
+	var created todo.Todo
 	if err := json.NewDecoder(rec.Body).Decode(&created); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
